@@ -2,5 +2,7 @@
 Dynamic bezel project for RetroPie
 
 ```
-ls -al crop.png | awk '{print $5}'
+import os
+mysize = os.path.getsize("myfile.JSON")
+print("mysize :", mysize)
 ```
