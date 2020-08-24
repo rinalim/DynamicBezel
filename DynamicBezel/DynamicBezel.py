@@ -7,11 +7,14 @@ from fcntl import ioctl
 from subprocess import *
 from pyudev import Context
 
-CONFIG_DIR = '/opt/retropie/configs/'
-RETROARCH_CFG = CONFIG_DIR + 'all/retroarch.cfg'
+OPT = '/opt/retropie'
+ES_INPUT = OPT+'/configs/all/emulationstation/es_input.cfg'
+RETROARCH_CFG = OPT+'/configs/all/retroarch-joypads/'
 PATH_HOME = "/home/pi/DynamicBezel/"
 PATH_SS = "/opt/retropie/configs/all/retroarch/screenshots/"
+
 romname = "None"
+btn_select = '-1'
 SELECT_BTN_ON = False
 
 def run_cmd(cmd):
@@ -21,8 +24,6 @@ def run_cmd(cmd):
     return output
 
 def load_retroarch_cfg(dev_name):
-    print 'Device Name: ', dev_name, '\n'
-    
     retroarch_key = {}
     f = open(RETROARCH_CFG + dev_name + '.cfg', 'r')
     while True:
@@ -36,10 +37,7 @@ def load_retroarch_cfg(dev_name):
             line = line.replace('_axis','')
             words = line.split()
             retroarch_key[words[0]] = words[2].replace('"','')
-    f.close()
-    f = open(PATH_PAUSEMENU + "button.cfg", 'w')
-    f.write(str(retroarch_key)+'\n')
-    f.close()
+    return retroarch_key
 
 def get_devname(jid):
     fn = '/dev/input/'+jid
@@ -166,10 +164,13 @@ def process_event(event):
 
 def main():
     
-    global romname
+    global romname, btn_select
 
     devname = get_devname('js0')
     print("Device: "+devname)
+    keymap = load_retroarch_cfg(devname)
+    btn_select = keymap.get('select')
+    print("Select: "+btn_select)
     romname = get_romname()
     print("Rom: "+romname)
     db = get_map(romname)
