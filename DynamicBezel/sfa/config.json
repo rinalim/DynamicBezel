@@ -1,17 +1,20 @@
-{
-  "position":"25x25+0+17",
-  "size":
+[
   {
-    "539":"adon",
-    "557":"birdie",
-    "561":"chun-li",
-    "549":"guy",
-    "574":"ken",
-    "525":"nash",
-    "590":"rose",
-    "582":"ryu",
-    "585":"ryu",
-    "513":"sagat",
-    "569":"sodom"
+    "position":"25x25+0+17",
+    "display":"main",
+    "size":
+    {
+      "539":"adon",
+      "557":"birdie",
+      "561":"chun-li",
+      "549":"guy",
+      "574":"ken",
+      "525":"nash",
+      "590":"rose",
+      "582":"ryu",
+      "585":"ryu",
+      "513":"sagat",
+      "569":"sodom"
+    }
   }
-}
+]
