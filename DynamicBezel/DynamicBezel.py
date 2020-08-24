@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import os, sys, time, keyboard, datetime
-import json, glob, struct, array
+import json, glob, struct, array, errno
 from bitstring import Bits
 from fcntl import ioctl
 from subprocess import *
@@ -13,8 +13,24 @@ RETROARCH_CFG = OPT+'/configs/all/retroarch-joypads/'
 PATH_HOME = "/home/pi/DynamicBezel/"
 PATH_SS = "/opt/retropie/configs/all/retroarch/screenshots/"
 
+JS_MIN = -32768
+JS_MAX = 32768
+JS_REP = 0.20
+
+#JS_THRESH = 0.75
+JS_THRESH = 0.01
+
+JS_EVENT_BUTTON = 0x01
+JS_EVENT_AXIS = 0x02
+JS_EVENT_INIT = 0x80
+
+event_format = 'IhBB'
+event_size = struct.calcsize(event_format)
+
+btn_hotkey = -1
 romname = "None"
-btn_select = '-1'
+position = "None"
+inout = {}
 SELECT_BTN_ON = False
 
 def run_cmd(cmd):
@@ -67,13 +83,14 @@ def send_hotkey(key, repeat):
     time.sleep(0.1)
 
 def crop_img(filename):
-    os.system("rm "+PATH_SS+romname+"*")
-    send_hotkey("f8", 1)
-    time.sleep(1)
+    #os.system("rm "+PATH_SS+romname+"*")
+    #send_hotkey("f8", 1)
+    time.sleep(0.5)
     flist = glob.glob(PATH_SS+romname+"*")
     print(flist)
     if len(flist) > 0:
-        os.system("convert " + flist[0] + " -crop " + position + " ./" + filename + ".png")
+        os.system("convert " + flist[-1] + " -crop " + position + " ./" + filename + ".png")
+    os.system("rm -f "+PATH_SS+romname+"*")
 
 def get_romname():
     while True:
@@ -89,11 +106,11 @@ def get_romname():
 
 def get_map(romname):
     db = {}
-    if(os.path.isdir(PATH_HOME+romname)):
-        file_list = os.listdir(PATH_HOME+romname)
+    if(os.path.isdir(PATH_HOME+'data/'+romname)):
+        file_list = os.listdir(PATH_HOME+'data/'+romname+'/input')
         for f in file_list:
             if f.endswith('png'):
-                size = os.path.getsize(PATH_HOME+romname+'/'+f)
+                size = os.path.getsize(PATH_HOME+'data/'+romname+'/input/'+f)
                 output = f.replace('.png','')
                 db[str(size)] = output.split('_')[0]
     return db   
@@ -136,12 +153,12 @@ def process_event(event):
         return False
 
     if js_type == JS_EVENT_AXIS and js_number <= 7 and js_number % 2 == 1:
-        if js_value <= JS_MIN * JS_THRESH:
+        if js_value >= JS_MAX * JS_THRESH:
             if SELECT_BTN_ON == True:
                 print "Change bezel"
                 crop_img("now")
                 filesize = os.path.getsize("./now.png")
-                character = db["size"].get(str(filesize))
+                character = inout.get(str(filesize))
                 if character != None:
                     print(character)
                     '''
@@ -153,7 +170,7 @@ def process_event(event):
 
     if js_type == JS_EVENT_BUTTON:
         if js_value == 1:
-            if js_number == btn_select:
+            if js_number == btn_hotkey:
                 SELECT_BTN_ON = True
             else:
                 return False
@@ -164,22 +181,23 @@ def process_event(event):
 
 def main():
     
-    global romname, btn_select
+    global romname, btn_hotkey, inout, position
 
     devname = get_devname('js0')
     print("Device: "+devname)
     keymap = load_retroarch_cfg(devname)
-    btn_select = keymap.get('select')
-    print("Select: "+btn_select)
+    btn_hotkey = int(keymap.get('enable_hotkey'))
+    print("Select: "+str(btn_hotkey))
     romname = get_romname()
     print("Rom: "+romname)
-    db = get_map(romname)
-    print(db)
+    inout = get_map(romname)
+    print(inout)
 
-    f = open(PATH_HOME+romname+"/config.json", "r")
+    f = open(PATH_HOME+'data/'+romname+"/config.json", "r")
     db = json.load(f)
     f.close()
     position = db[0]["position"]
+    os.system("rm -f "+PATH_SS+romname+"*")
     
     js_fds=[]
     rescan_time = time.time()
@@ -213,7 +231,7 @@ def main():
 
         if time.time() - rescan_time > 2:
             rescan_time = time.time()
-            if cmp(js_devs, get_devices()):
+            if cmp(js_devs, ['/dev/input/js0']):
                 close_fds(js_fds)
                 js_fds = []
 
