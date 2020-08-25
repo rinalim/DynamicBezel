@@ -18,8 +18,7 @@ JS_MIN = -32768
 JS_MAX = 32768
 JS_REP = 0.20
 
-#JS_THRESH = 0.75
-JS_THRESH = 0.01
+JS_THRESH = 0.75
 
 JS_EVENT_BUTTON = 0x01
 JS_EVENT_AXIS = 0x02
@@ -63,32 +62,12 @@ def load_retroarch_cfg(dev_name):
             retroarch_key[words[0]] = words[2].replace('"','')
     return retroarch_key
 
-def get_devname(jid):
-    fn = '/dev/input/'+jid
-    jsdev = open(fn, 'rb')
+def get_devname(dev):
+    jsdev = open(dev, 'rb')
     buf = array.array('B', [0] * 64)
     ioctl(jsdev, 0x80006a13 + (0x10000 * len(buf)), buf) # JSIOCGNAME(len)
     js_name = Bits(buf).bytes.rstrip(b'\x00').decode('utf-8')
     return js_name
-
-def send_hotkey(key, repeat):
-    # Press and release "2" once before actual input (bug?)
-    keyboard.press("2")
-    time.sleep(0.1)
-    keyboard.release("2")
-    time.sleep(0.1)
-
-    keyboard.press("2")
-    time.sleep(0.1)
-    
-    for i in range(repeat):
-        keyboard.press(key)
-        time.sleep(0.1)
-        keyboard.release(key)
-        time.sleep(0.1)
-    
-    keyboard.release("2")
-    time.sleep(0.1)
 
 def crop_img():
     #os.system("rm "+PATH_SS+romname+"*")
@@ -97,7 +76,7 @@ def crop_img():
     flist = glob.glob(PATH_SS+romname+"*")
     if len(flist) > 0:
         for d in db:
-            os.system("convert " + flist[-1] + " -crop " + d['position'] + " ./" + d['label'] + ".png")
+            os.system("convert " + flist[-1] + " -crop " + d['position'] + " ./" + d['device'] + ".png")
     os.system("rm -f "+PATH_SS+romname+"*")
 
 def get_romname():
@@ -112,13 +91,13 @@ def get_romname():
             romname = path.replace('"','').split("/")[-1].split(".")[0]
             return romname
 
-def get_input(romname, label):
+def get_input(romname, device_id):
     input_data = {}
-    if(os.path.isdir(PATH_HOME+'data/'+romname+'/'+label)):
-        file_list = os.listdir(PATH_HOME+'data/'+romname+'/'+label+'/input')
+    if(os.path.isdir(PATH_HOME+'data/'+romname+'/'+device_id)):
+        file_list = os.listdir(PATH_HOME+'data/'+romname+'/'+device_id+'/input')
         for f in file_list:
             if f.endswith('png'):
-                size = os.path.getsize(PATH_HOME+'data/'+romname+'/'+label+'/input/'+f)
+                size = os.path.getsize(PATH_HOME+'data/'+romname+'/'+device_id+'/input/'+f)
                 filename = f.replace('.png','')
                 input_data[str(size)] = filename.split('_')[0]
     return input_data   
@@ -127,18 +106,18 @@ def change_bezel():
     print("Change bezel")
     crop_img()
     for d in db:
-        filesize = os.path.getsize('./' + d['label'] + '.png')
+        filesize = os.path.getsize('./' + d['device'] + '.png')
         target = d['input'].get(str(filesize))
         if target != None:
             print(target)
-            os.system("echo " + PATH_HOME + "data/"+romname+'/'+d['label']+'/output/' + target + ".png > /tmp/bezel" + d['label'] + ".txt")
-            if is_running("/tmp/bezel" + d['label'] + ".txt") == False:
-                os.system(PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel" + d['label'] + ".txt -f -l 30002 -a fill &")
+            os.system("echo " + PATH_HOME + "data/"+romname+'/'+d['device']+'/output/' + target + ".png > /tmp/bezel" + d['device'] + ".txt")
+            if is_running("/tmp/bezel" + d['device'] + ".txt") == False:
+                os.system(PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel" + d['device'] + ".txt -f -l 30002 -a fill &")
         else:
-            os.system("pkill -ef /tmp/bezel" + d['label'] + ".txt")
+            os.system("pkill -ef /tmp/bezel" + d['device'] + ".txt")
 
 def open_devices():
-    devs = ['/dev/input/js0']
+    devs = [sys.argv[1]]
 
     fds = []
     for dev in devs:
@@ -192,11 +171,17 @@ def process_event(event):
 
     return True
 
+def show_img(img_name):
+    png_path = PATH_HOME + "data/" + romname + "/output/" + img_name + ".png"
+    if and os.path.isfile(png_path) == True:
+        os.system("echo " + png_path + " > /tmp/bezel" + db['device'] + ".txt")
+        os.system(PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel" + db['device'] + ".txt -f -l 30001 -a fill &")
+
 def main():
     
     global romname, btn_hotkey, db
 
-    devname = get_devname('js0')
+    devname = get_devname(sys.argv[1])
     print("Device: "+devname)
     keymap = load_retroarch_cfg(devname)
     btn_hotkey = int(keymap.get('enable_hotkey'))
@@ -207,18 +192,18 @@ def main():
     print("Rom: "+romname)
     
     f = open(PATH_HOME+'data/'+romname+"/config.json", "r")
-    db = json.load(f)
+    json_data = json.load(f)
     f.close()
-    for d in db:
-        d['input'] = get_input(romname, d['label'])
+    for j in json_data:
+        if j['device'] == sys.argv[1].replace('/dev/input/','')
+            db = j
+            db['input'] = get_input(romname, j['device'])
     print(db)
 
     os.system("rm -f "+PATH_SS+romname+"*")
 
     # Show default image
-    if os.path.isfile(PATH_HOME + "data/"+romname+"/default.png" == True):
-        os.system("echo " + PATH_HOME + "data/"+romname+"/default.png > /tmp/bezel.txt")
-        os.system(PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.txt -f -l 30001 -a fill &")
+    show_image('default')
 
     js_fds=[]
     rescan_time = time.time()
@@ -252,7 +237,7 @@ def main():
 
         if time.time() - rescan_time > 2:
             rescan_time = time.time()
-            if cmp(js_devs, ['/dev/input/js0']):
+            if cmp(js_devs, [sys.argv[1]]):
                 close_fds(js_fds)
                 js_fds = []
 
