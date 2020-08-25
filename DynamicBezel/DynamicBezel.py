@@ -11,6 +11,7 @@ OPT = '/opt/retropie'
 ES_INPUT = OPT+'/configs/all/emulationstation/es_input.cfg'
 RETROARCH_CFG = OPT+'/configs/all/retroarch-joypads/'
 PATH_HOME = "/home/pi/DynamicBezel/"
+PATH_DYNAMICBEZEL = OPT+'/configs/all/DynamicBezel/'
 PATH_SS = "/opt/retropie/configs/all/retroarch/screenshots/"
 
 JS_MIN = -32768
@@ -28,16 +29,23 @@ event_format = 'IhBB'
 event_size = struct.calcsize(event_format)
 
 btn_hotkey = -1
+btn_down = -1
 romname = "None"
-position = "None"
-inout = {}
-SELECT_BTN_ON = False
+db = {}
+HOTKEY_BTN_ON = False
 
 def run_cmd(cmd):
 # runs whatever in the cmd variable
     p = Popen(cmd, shell=True, stdout=PIPE)
     output = p.communicate()[0]
     return output
+        
+def is_running(pname):
+    ps_grep = run_cmd("ps -ef | grep " + pname + " | grep -v grep")
+    if len(ps_grep) > 1 and "bash" not in ps_grep:
+        return True
+    else:
+        return False
 
 def load_retroarch_cfg(dev_name):
     retroarch_key = {}
@@ -82,14 +90,14 @@ def send_hotkey(key, repeat):
     keyboard.release("2")
     time.sleep(0.1)
 
-def crop_img(filename):
+def crop_img():
     #os.system("rm "+PATH_SS+romname+"*")
     #send_hotkey("f8", 1)
     time.sleep(0.5)
     flist = glob.glob(PATH_SS+romname+"*")
-    print(flist)
     if len(flist) > 0:
-        os.system("convert " + flist[-1] + " -crop " + position + " ./" + filename + ".png")
+        for d in db:
+            os.system("convert " + flist[-1] + " -crop " + d['position'] + " ./" + d['label'] + ".png")
     os.system("rm -f "+PATH_SS+romname+"*")
 
 def get_romname():
@@ -104,16 +112,30 @@ def get_romname():
             romname = path.replace('"','').split("/")[-1].split(".")[0]
             return romname
 
-def get_map(romname):
-    db = {}
-    if(os.path.isdir(PATH_HOME+'data/'+romname)):
-        file_list = os.listdir(PATH_HOME+'data/'+romname+'/input')
+def get_input(romname, label):
+    input_data = {}
+    if(os.path.isdir(PATH_HOME+'data/'+romname+'/'+label)):
+        file_list = os.listdir(PATH_HOME+'data/'+romname+'/'+label+'/input')
         for f in file_list:
             if f.endswith('png'):
-                size = os.path.getsize(PATH_HOME+'data/'+romname+'/input/'+f)
-                output = f.replace('.png','')
-                db[str(size)] = output.split('_')[0]
-    return db   
+                size = os.path.getsize(PATH_HOME+'data/'+romname+'/'+label+'/input/'+f)
+                filename = f.replace('.png','')
+                input_data[str(size)] = filename.split('_')[0]
+    return input_data   
+
+def change_bezel():
+    print("Change bezel")
+    crop_img()
+    for d in db:
+        filesize = os.path.getsize('./' + d['label'] + '.png')
+        target = d['input'].get(str(filesize))
+        if target != None:
+            print(target)
+            os.system("echo " + PATH_HOME + "data/"+romname+'/'+d['label']+'/output/' + target + ".png > /tmp/bezel" + d['label'] + ".txt")
+            if is_running("/tmp/bezel" + d['label'] + ".txt") == False:
+                os.system(PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel" + d['label'] + ".txt -f -l 30002 -a fill &")
+        else:
+            os.system("pkill -ef /tmp/bezel" + d['label'] + ".txt")
 
 def open_devices():
     devs = ['/dev/input/js0']
@@ -144,7 +166,7 @@ def read_event(fd):
             return event
 
 def process_event(event):
-    global SELECT_BTN_ON
+    global HOTKEY_BTN_ON
 
     (js_time, js_value, js_type, js_number) = struct.unpack(event_format, event)
 
@@ -154,51 +176,50 @@ def process_event(event):
 
     if js_type == JS_EVENT_AXIS and js_number <= 7 and js_number % 2 == 1:
         if js_value >= JS_MAX * JS_THRESH:
-            if SELECT_BTN_ON == True:
-                print "Change bezel"
-                crop_img("now")
-                filesize = os.path.getsize("./now.png")
-                character = inout.get(str(filesize))
-                if character != None:
-                    print(character)
-                    '''
-                    os.system("echo " + PATH_VOLUMEJOY + "png/volume" + str(vol/6) + ".png > /tmp/volume.txt")
-                        if is_running("omxiv-volume") == False:
-                            os.system(PATH_VOLUMEJOY + "omxiv-volume " + PATH_VOLUMEJOY + "png/background.png -l 30001 -a center &")
-                            os.system(PATH_VOLUMEJOY + "omxiv-volume /tmp/volume.txt -f -t 5 -T blend --duration 20 -l 30002 -a center &")
-                    '''
+            if HOTKEY_BTN_ON == True:
+                change_bezel()
 
     if js_type == JS_EVENT_BUTTON:
         if js_value == 1:
             if js_number == btn_hotkey:
-                SELECT_BTN_ON = True
-            else:
-                return False
+                HOTKEY_BTN_ON = True
+            if js_number == btn_down:
+                change_bezel()
+            #else:
+            #    return False
         elif js_value == 0:
-                SELECT_BTN_ON = False
+                HOTKEY_BTN_ON = False
 
     return True
 
 def main():
     
-    global romname, btn_hotkey, inout, position
+    global romname, btn_hotkey, db
 
     devname = get_devname('js0')
     print("Device: "+devname)
     keymap = load_retroarch_cfg(devname)
     btn_hotkey = int(keymap.get('enable_hotkey'))
-    print("Select: "+str(btn_hotkey))
+    btn_down = int(keymap.get('down'))
+    print("Hotkey: "+str(btn_hotkey))
+    print("Down: "+str(btn_down))
     romname = get_romname()
     print("Rom: "+romname)
-    inout = get_map(romname)
-    print(inout)
-
+    
     f = open(PATH_HOME+'data/'+romname+"/config.json", "r")
     db = json.load(f)
     f.close()
-    position = db[0]["position"]
+    for d in db:
+        d['input'] = get_input(romname, d['label'])
+    print(db)
+
     os.system("rm -f "+PATH_SS+romname+"*")
-    
+
+    # Show default image
+    if os.path.isfile(PATH_HOME + "data/"+romname+"/default.png" == True):
+        os.system("echo " + PATH_HOME + "data/"+romname+"/default.png > /tmp/bezel.txt")
+        os.system(PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.txt -f -l 30001 -a fill &")
+
     js_fds=[]
     rescan_time = time.time()
     while True:
