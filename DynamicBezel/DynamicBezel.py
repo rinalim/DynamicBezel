@@ -75,8 +75,7 @@ def crop_img():
     time.sleep(0.5)
     flist = glob.glob(PATH_SS+romname+"*")
     if len(flist) > 0:
-        for d in db:
-            os.system("convert " + flist[-1] + " -crop " + d['position'] + " ./" + d['device'] + ".png")
+        os.system("convert " + flist[-1] + " -crop " + db['position'] + " ./" + db['device'] + ".png")
     os.system("rm -f "+PATH_SS+romname+"*")
 
 def get_romname():
@@ -93,11 +92,11 @@ def get_romname():
 
 def get_input(romname, device_id):
     input_data = {}
-    if(os.path.isdir(PATH_HOME+'data/'+romname+'/'+device_id)):
-        file_list = os.listdir(PATH_HOME+'data/'+romname+'/'+device_id+'/input')
+    if(os.path.isdir(PATH_HOME+'bezel/'+romname+'/'+device_id)):
+        file_list = os.listdir(PATH_HOME+'bezel/'+romname+'/'+device_id+'/input')
         for f in file_list:
             if f.endswith('png'):
-                size = os.path.getsize(PATH_HOME+'data/'+romname+'/'+device_id+'/input/'+f)
+                size = os.path.getsize(PATH_HOME+'bezel/'+romname+'/'+device_id+'/input/'+f)
                 filename = f.replace('.png','')
                 input_data[str(size)] = filename.split('_')[0]
     return input_data   
@@ -105,16 +104,14 @@ def get_input(romname, device_id):
 def change_bezel():
     print("Change bezel")
     crop_img()
-    for d in db:
-        filesize = os.path.getsize('./' + d['device'] + '.png')
-        target = d['input'].get(str(filesize))
+    if os.path.isfile('./' + db['device'] + '.png') == True:
+        filesize = os.path.getsize('./' + db['device'] + '.png')
+        target = db['input'].get(str(filesize))
         if target != None:
             print(target)
-            os.system("echo " + PATH_HOME + "data/"+romname+'/'+d['device']+'/output/' + target + ".png > /tmp/bezel" + d['device'] + ".txt")
-            if is_running("/tmp/bezel" + d['device'] + ".txt") == False:
-                os.system(PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel" + d['device'] + ".txt -f -l 30002 -a fill &")
-        else:
-            os.system("pkill -ef /tmp/bezel" + d['device'] + ".txt")
+            os.system("echo " + PATH_HOME + "bezel/"+romname+'/'+db['device']+'/output/' + target + ".png > /tmp/bezel" + db['device'] + ".txt")
+            if is_running("/tmp/bezel" + db['device'] + ".txt") == False:
+                os.system(PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel" + db['device'] + ".txt -f -l 30002 -a fill &")
 
 def open_devices():
     devs = [sys.argv[1]]
@@ -162,7 +159,7 @@ def process_event(event):
         if js_value == 1:
             if js_number == btn_hotkey:
                 HOTKEY_BTN_ON = True
-            if js_number == btn_down:
+            if js_number == btn_down and HOTKEY_BTN_ON == True :
                 change_bezel()
             #else:
             #    return False
@@ -171,15 +168,15 @@ def process_event(event):
 
     return True
 
-def show_img(img_name):
-    png_path = PATH_HOME + "data/" + romname + "/output/" + img_name + ".png"
-    if and os.path.isfile(png_path) == True:
+def show_image(img_name):
+    png_path = PATH_HOME + "bezel/" + romname + '/' + db['device'] + "/output/" + img_name + ".png"
+    if os.path.isfile(png_path) == True:
         os.system("echo " + png_path + " > /tmp/bezel" + db['device'] + ".txt")
         os.system(PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel" + db['device'] + ".txt -f -l 30001 -a fill &")
 
 def main():
     
-    global romname, btn_hotkey, db
+    global romname, btn_hotkey, btn_down, db
 
     devname = get_devname(sys.argv[1])
     print("Device: "+devname)
@@ -191,14 +188,15 @@ def main():
     romname = get_romname()
     print("Rom: "+romname)
     
-    f = open(PATH_HOME+'data/'+romname+"/config.json", "r")
+    f = open(PATH_HOME+'bezel/'+romname+"/config.json", "r")
     json_data = json.load(f)
     f.close()
     for j in json_data:
-        if j['device'] == sys.argv[1].replace('/dev/input/','')
+        if j['device'] == sys.argv[1].replace('/dev/input/',''):
             db = j
             db['input'] = get_input(romname, j['device'])
     print(db)
+    os.system("pkill -ef /tmp/bezel" + db['device'] + ".txt")
 
     os.system("rm -f "+PATH_SS+romname+"*")
 
