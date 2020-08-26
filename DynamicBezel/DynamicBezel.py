@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 import os, sys, time, keyboard, datetime
 import json, glob, struct, array, errno
@@ -13,6 +13,7 @@ RETROARCH_CFG = OPT+'/configs/all/retroarch-joypads/'
 PATH_HOME = "/home/pi/DynamicBezel/"
 PATH_DYNAMICBEZEL = OPT+'/configs/all/DynamicBezel/'
 PATH_SS = "/opt/retropie/configs/all/retroarch/screenshots/"
+VIEWER = ""
 
 JS_MIN = -32768
 JS_MAX = 32768
@@ -30,7 +31,7 @@ event_size = struct.calcsize(event_format)
 btn_hotkey = -1
 btn_down = -1
 romname = "None"
-db = {}
+config = {}
 HOTKEY_BTN_ON = False
 
 def run_cmd(cmd):
@@ -75,7 +76,7 @@ def crop_img():
     time.sleep(0.5)
     flist = glob.glob(PATH_SS+romname+"*")
     if len(flist) > 0:
-        os.system("convert " + flist[-1] + " -crop " + db['position'] + " ./" + db['device'] + ".png")
+        os.system("convert " + flist[-1] + " -crop " + config['position'] + " ./" + config['device'] + ".png")
     os.system("rm -f "+PATH_SS+romname+"*")
 
 def get_romname():
@@ -101,17 +102,24 @@ def get_input(romname, device_id):
                 input_data[str(size)] = filename.split('_')[0]
     return input_data   
 
+def show_image(img_name):
+    png_path = PATH_HOME + "bezel/" + romname + '/' + config['device'] + "/output/" + img_name + ".png"
+    if os.path.isfile(png_path) == True:
+        os.system("echo " + png_path + " > /tmp/bezel." + config['device'])
+        if is_running("/tmp/bezel." + config['device']) == False:
+            os.system(VIEWER + " &")
+
 def change_bezel():
-    print("Change bezel")
+    print "Change bezel"
     crop_img()
-    if os.path.isfile('./' + db['device'] + '.png') == True:
-        filesize = os.path.getsize('./' + db['device'] + '.png')
-        target = db['input'].get(str(filesize))
+    if os.path.isfile('./' + config['device'] + '.png') == True:
+        filesize = os.path.getsize('./' + config['device'] + '.png')
+        target = config['input'].get(str(filesize))
         if target != None:
-            print(target)
-            os.system("echo " + PATH_HOME + "bezel/"+romname+'/'+db['device']+'/output/' + target + ".png > /tmp/bezel" + db['device'] + ".txt")
-            if is_running("/tmp/bezel" + db['device'] + ".txt") == False:
-                os.system(PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel" + db['device'] + ".txt -f -l 30002 -a fill &")
+            print target
+            show_image(target)
+        else:
+            show_image("default")
 
 def open_devices():
     devs = [sys.argv[1]]
@@ -168,38 +176,44 @@ def process_event(event):
 
     return True
 
-def show_image(img_name):
-    png_path = PATH_HOME + "bezel/" + romname + '/' + db['device'] + "/output/" + img_name + ".png"
-    if os.path.isfile(png_path) == True:
-        os.system("echo " + png_path + " > /tmp/bezel" + db['device'] + ".txt")
-        os.system(PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel" + db['device'] + ".txt -f -l 30001 -a fill &")
-
 def main():
     
-    global romname, btn_hotkey, btn_down, db
+    global romname, btn_hotkey, btn_down, config
+
+    # check if the controller is connected
+    if os.path.isfile(sys.argv[1]) == False:
+        print "Cannot find controller " + sys.argv[1]
+        sys.exit()
 
     devname = get_devname(sys.argv[1])
-    print("Device: "+devname)
+    print "Device: " + devname
     keymap = load_retroarch_cfg(devname)
     btn_hotkey = int(keymap.get('enable_hotkey'))
     btn_down = int(keymap.get('down'))
-    print("Hotkey: "+str(btn_hotkey))
-    print("Down: "+str(btn_down))
+    print "Hotkey: " + str(btn_hotkey)
+    print "Down: " + str(btn_down)
     romname = get_romname()
-    print("Rom: "+romname)
+    print "Rom: " + romname
     
     f = open(PATH_HOME+'bezel/'+romname+"/config.json", "r")
     json_data = json.load(f)
     f.close()
     for j in json_data:
         if j['device'] == sys.argv[1].replace('/dev/input/',''):
-            db = j
-            db['input'] = get_input(romname, j['device'])
-    print(db)
-    os.system("pkill -ef /tmp/bezel" + db['device'] + ".txt")
+            config = j
+            config['input'] = get_input(romname, j['device'])
+    print config
+    os.system("pkill -ef /tmp/bezel." + config['device'])
+
+    if config['screen'] == 'main': 
+        VIEWER = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel." + config['device'] + " -f -a fill -l " + config['layer']
+    elif config['screen'] == 'second':
+        VIEWER = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel." + config['device'] + " -f -a fill -l " + config['layer'] + ' -d 7'
+    else:
+        print "Cannot find controller " + sys.argv[1]
+        sys.exit()
 
     os.system("rm -f "+PATH_SS+romname+"*")
-
     # Show default image
     show_image('default')
 
