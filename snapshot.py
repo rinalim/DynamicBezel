@@ -1,5 +1,8 @@
 #!/usr/bin/python
-#-*- coding: utf-8 -*-
+'''
+Usage:
+python snapshot.py sfa 25x25+359+17 ryu
+'''
 
 import os, sys, time, keyboard, datetime
 import json, glob
@@ -35,8 +38,6 @@ def crop_img(filename):
     flist = glob.glob(SPATH+game+"*")
     print flist
     if len(flist) > 0:
-        os.system("convert " + flist[0] + " -crop " + size + " ./" + filename + ".png")
+        os.system("convert " + flist[-1] + " -crop " + size + " ./" + filename + ".png")
 
 crop_img(character)
-
-#time.sleep(3)
