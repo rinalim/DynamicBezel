@@ -4,5 +4,11 @@
     "position":"25x25+0+17",
     "display":"main",
     "layer":"30001"
+  },
+  {
+    "device":"js1",
+    "position":"25x25+359+17",
+    "display":"main",
+    "layer":"30002"
   }
 ]
