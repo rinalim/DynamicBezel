@@ -108,7 +108,6 @@ def show_image(img_name, player):
         os.system("echo " + png_path + " > /tmp/bezel." + player)
         if is_running("/tmp/bezel." + player) == False:
             if player == '1p':
-                print (VIEWER_1P + " &")
                 os.system(VIEWER_1P + " &")
             elif player == '2p':
                 os.system(VIEWER_2P + " &")
@@ -192,7 +191,7 @@ def process_event(event):
 
 def main():
     
-    global romname, btn_hotkey, btn_left, btn_right, config
+    global romname, btn_hotkey, btn_left, btn_right, config, VIEWER_1P, VIEWER_2P
 
     devname = get_devname(sys.argv[1])
     print "Device: " + devname
