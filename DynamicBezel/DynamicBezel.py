@@ -59,8 +59,8 @@ def load_retroarch_cfg(dev_name):
         if '_btn' in line or '_axis' in line:
             line = line.replace('\n','')
             line = line.replace('input_','')
-            line = line.replace('_btn','')
-            line = line.replace('_axis','')
+            #line = line.replace('_btn','')
+            #line = line.replace('_axis','')
             words = line.split()
             retroarch_key[words[0]] = words[2].replace('"','')
     return retroarch_key
@@ -197,10 +197,10 @@ def main():
     print "Device: " + devname
     keymap = load_retroarch_cfg(devname)
     btn_hotkey = int(keymap.get('enable_hotkey'))
-    if keymap.get('left') != None:
-        btn_left = int(keymap.get('left'))
-    if keymap.get('right') != None:
-        btn_right = int(keymap.get('right'))
+    if keymap.get('left_btn') != None:
+        btn_left = int(keymap.get('left_btn'))
+    if keymap.get('right_btn') != None:
+        btn_right = int(keymap.get('right_btn'))
     print "Hotkey: " + str(btn_hotkey)
     print "Left: " + str(btn_left)
     print "Right: " + str(btn_right)
