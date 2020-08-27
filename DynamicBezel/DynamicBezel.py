@@ -210,6 +210,7 @@ def main():
     f = open(PATH_HOME+'bezel/'+romname+"/config.json", "r")
     config = json.load(f)
     f.close()
+    print config
 
     if config.get['1p'] != None:
         config['1p']['input'] = get_input(romname, '1p')
