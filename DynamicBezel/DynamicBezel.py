@@ -113,7 +113,7 @@ def show_image(img_name, player):
                 os.system(VIEWER_2P + " &")
 
 def change_bezel(player):
-    if config.get[player] == None:
+    if config.get(player) == None:
         print "No config found for " + player
         return false
     print "Change bezel"
@@ -212,13 +212,13 @@ def main():
     f.close()
     print config
 
-    if config.get['1p'] != None:
+    if config.get('1p') != None:
         config['1p']['input'] = get_input(romname, '1p')
         if config['1p']['screen'] == 'main': 
             VIEWER_1P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.1p -f -a fill -l " + config['layer']
         elif config['1p']['screen'] == 'second':
             VIEWER_1P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.1p -f -a fill -l " + config['layer'] + ' -d 7'
-    if config.get['2p'] != None:    
+    if config.get('2p') != None:    
         config['2p']['input'] = get_input(romname, '2p')
         if config['2p']['screen'] == 'main': 
             VIEWER_2P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.2p -f -a fill -l " + config['layer']
