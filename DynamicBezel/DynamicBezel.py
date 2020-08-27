@@ -193,11 +193,6 @@ def main():
     
     global romname, btn_hotkey, btn_left, btn_right, config
 
-    # check if the controller is connected
-    if os.path.isfile(sys.argv[1]) == False:
-        print "Cannot find controller " + sys.argv[1]
-        sys.exit()
-
     devname = get_devname(sys.argv[1])
     print "Device: " + devname
     keymap = load_retroarch_cfg(devname)
