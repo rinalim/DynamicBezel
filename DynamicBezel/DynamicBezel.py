@@ -197,8 +197,10 @@ def main():
     print "Device: " + devname
     keymap = load_retroarch_cfg(devname)
     btn_hotkey = int(keymap.get('enable_hotkey'))
-    btn_left = int(keymap.get('left'))
-    btn_right = int(keymap.get('right'))
+    if keymap.get('left') != None:
+        btn_left = int(keymap.get('left'))
+    if keymap.get('right') != None:
+        btn_right = int(keymap.get('right'))
     print "Hotkey: " + str(btn_hotkey)
     print "Left: " + str(btn_left)
     print "Right: " + str(btn_right)
