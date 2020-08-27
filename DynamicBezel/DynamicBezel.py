@@ -208,7 +208,7 @@ def main():
     print "Rom: " + romname
     
     f = open(PATH_HOME+'bezel/'+romname+"/config.json", "r")
-    json_data = json.load(f)
+    config = json.load(f)
     f.close()
 
     if config.get['1p'] != None:
