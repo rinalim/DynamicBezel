@@ -77,7 +77,10 @@ def crop_img(player):
     flist = glob.glob(PATH_SS+romname+"*")
     if len(flist) > 0:
         os.system("convert " + flist[-1] + " -crop " + config[player]['position'] + " ./" + player + ".png")
-    os.system("rm -f "+PATH_SS+romname+"*")
+        os.system("rm -f "+PATH_SS+romname+"*")
+        return True
+    else:
+        return False
 
 def get_romname():
     while True:
@@ -115,12 +118,14 @@ def show_image(img_name, player):
 def change_bezel(player):
     if config.get(player) == None:
         print "No config found for " + player
-        return false
+        return False
     print "Change bezel"
     keyboard.press_and_release("f8")
     #time.sleep(0.1)
     #keyboard.release(key)
-    crop_img(player)
+    if crop_img(player) == False:
+        print "No image to crop"
+        return False
     if os.path.isfile('./' + player + '.png') == True:
         filesize = os.path.getsize('./' + player + '.png')
         target = config[player]['input'].get(str(filesize))
@@ -129,7 +134,7 @@ def change_bezel(player):
             show_image(target, player)
         else:
             show_image("default", player)
-    return true
+    return True
 
 def open_devices():
     devs = [sys.argv[1]]
