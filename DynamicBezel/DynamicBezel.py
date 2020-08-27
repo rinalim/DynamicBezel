@@ -65,6 +65,25 @@ def load_retroarch_cfg(dev_name):
             retroarch_key[words[0]] = words[2].replace('"','')
     return retroarch_key
 
+def send_hotkey(key, repeat):
+    # Press and release "2" once before actual input (bug?)
+    keyboard.press("2")
+    time.sleep(0.1)
+    keyboard.release("2")
+    time.sleep(0.1)
+
+    keyboard.press("2")
+    time.sleep(0.1)
+    
+    for i in range(repeat):
+        keyboard.press(key)
+        time.sleep(0.1)
+        keyboard.release(key)
+        time.sleep(0.1)
+    
+    keyboard.release("2")
+    time.sleep(0.1)
+
 def get_devname(dev):
     jsdev = open(dev, 'rb')
     buf = array.array('B', [0] * 64)
@@ -120,9 +139,7 @@ def change_bezel(player):
         print "No config found for " + player
         return False
     print "Change bezel"
-    keyboard.press("f8")
-    time.sleep(0.1)
-    keyboard.release("f8")
+    send_hotkey("f8", 1)
     if crop_img(player) == False:
         print "No image to crop"
         return False
