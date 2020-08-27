@@ -1,4 +1,5 @@
 sudo apt install python-pyudev -y
+sudo pip install keyboard
 
 rm -rf /opt/retropie/configs/all/DynamicBezel/
 mkdir /opt/retropie/configs/all/DynamicBezel/
@@ -10,3 +11,5 @@ sudo sed -i '/DynamicBezel.py/d' /opt/retropie/configs/all/runcommand-onstart.sh
 echo 'sudo /usr/bin/python /opt/retropie/configs/all/DynamicBezel/DynamicBezel.py /dev/input/js0 &' >> /opt/retropie/configs/all/runcommand-onstart.sh
 sudo sed -i '/DynamicBezel.py/d' /opt/retropie/configs/all/runcommand-onend.sh
 echo 'sudo pkill -ef DynamicBezel.py' >> /opt/retropie/configs/all/runcommand-onend.sh
+sudo sed -i '/gpu_mem/d' /boot/config.txt
+echo 'gpu_mem=128' >> /boot/config.txt
