@@ -200,7 +200,8 @@ def main():
     btn_left = int(keymap.get('left'))
     btn_right = int(keymap.get('right'))
     print "Hotkey: " + str(btn_hotkey)
-    print "Down: " + str(btn_down)
+    print "Left: " + str(btn_left)
+    print "Right: " + str(btn_right)
     romname = get_romname()
     print "Rom: " + romname
     
