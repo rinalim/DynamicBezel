@@ -120,9 +120,9 @@ def change_bezel(player):
         print "No config found for " + player
         return False
     print "Change bezel"
-    keyboard.press_and_release("f8")
-    #time.sleep(0.1)
-    #keyboard.release(key)
+    keyboard.press("f8")
+    time.sleep(0.1)
+    keyboard.release("f8")
     if crop_img(player) == False:
         print "No image to crop"
         return False
