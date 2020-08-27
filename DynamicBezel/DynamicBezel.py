@@ -214,15 +214,15 @@ def main():
 
     if config.get('1p') != None:
         config['1p']['input'] = get_input(romname, '1p')
-        if config['1p']['screen'] == 'main': 
+        if config['1p']['display'] == 'main': 
             VIEWER_1P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.1p -f -a fill -l " + config['layer']
-        elif config['1p']['screen'] == 'second':
+        elif config['1p']['display'] == 'second':
             VIEWER_1P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.1p -f -a fill -l " + config['layer'] + ' -d 7'
     if config.get('2p') != None:    
         config['2p']['input'] = get_input(romname, '2p')
-        if config['2p']['screen'] == 'main': 
+        if config['2p']['display'] == 'main': 
             VIEWER_2P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.2p -f -a fill -l " + config['layer']
-        elif config['2p']['screen'] == 'second':
+        elif config['2p']['display'] == 'second':
             VIEWER_2P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.2p -f -a fill -l " + config['layer'] + ' -d 7'     
     print config
     
