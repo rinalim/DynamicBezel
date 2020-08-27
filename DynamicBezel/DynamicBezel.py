@@ -13,7 +13,8 @@ RETROARCH_CFG = OPT+'/configs/all/retroarch-joypads/'
 PATH_HOME = "/home/pi/DynamicBezel/"
 PATH_DYNAMICBEZEL = OPT+'/configs/all/DynamicBezel/'
 PATH_SS = "/opt/retropie/configs/all/retroarch/screenshots/"
-VIEWER = ""
+VIEWER_1P = ""
+VIEWER_2P = ""
 
 JS_MIN = -32768
 JS_MAX = 32768
@@ -29,7 +30,8 @@ event_format = 'IhBB'
 event_size = struct.calcsize(event_format)
 
 btn_hotkey = -1
-btn_down = -1
+btn_left = -1
+btn_right= -1
 romname = "None"
 config = {}
 HOTKEY_BTN_ON = False
@@ -70,13 +72,11 @@ def get_devname(dev):
     js_name = Bits(buf).bytes.rstrip(b'\x00').decode('utf-8')
     return js_name
 
-def crop_img():
-    #os.system("rm "+PATH_SS+romname+"*")
-    #send_hotkey("f8", 1)
+def crop_img(player):
     time.sleep(0.5)
     flist = glob.glob(PATH_SS+romname+"*")
     if len(flist) > 0:
-        os.system("convert " + flist[-1] + " -crop " + config['position'] + " ./" + config['device'] + ".png")
+        os.system("convert " + flist[-1] + " -crop " + config[player]['position'] + " ./" + player + ".png")
     os.system("rm -f "+PATH_SS+romname+"*")
 
 def get_romname():
@@ -91,35 +91,45 @@ def get_romname():
             romname = path.replace('"','').split("/")[-1].split(".")[0]
             return romname
 
-def get_input(romname, device_id):
+def get_input(romname, player):
     input_data = {}
-    if(os.path.isdir(PATH_HOME+'bezel/'+romname+'/'+device_id)):
-        file_list = os.listdir(PATH_HOME+'bezel/'+romname+'/'+device_id+'/input')
+    if(os.path.isdir(PATH_HOME+'bezel/'+romname+'/'+player)):
+        file_list = os.listdir(PATH_HOME+'bezel/'+romname+'/'+player+'/input')
         for f in file_list:
             if f.endswith('png'):
-                size = os.path.getsize(PATH_HOME+'bezel/'+romname+'/'+device_id+'/input/'+f)
+                size = os.path.getsize(PATH_HOME+'bezel/'+romname+'/'+player+'/input/'+f)
                 filename = f.replace('.png','')
                 input_data[str(size)] = filename.split('_')[0]
     return input_data   
 
-def show_image(img_name):
-    png_path = PATH_HOME + "bezel/" + romname + '/' + config['device'] + "/output/" + img_name + ".png"
+def show_image(img_name, player):
+    png_path = PATH_HOME + "bezel/" + romname + '/' + player + "/output/" + img_name + ".png"
     if os.path.isfile(png_path) == True:
-        os.system("echo " + png_path + " > /tmp/bezel." + config['device'])
-        if is_running("/tmp/bezel." + config['device']) == False:
-            os.system(VIEWER + " &")
+        os.system("echo " + png_path + " > /tmp/bezel." + player)
+        if is_running("/tmp/bezel." + player) == False:
+            if player == '1p':
+                os.system(VIEWER_1P + " &")
+            elif player == '2p':
+                os.system(VIEWER_2P + " &")
 
-def change_bezel():
+def change_bezel(player):
+    if config.get[player] == None:
+        print "No config found for " + player
+        return false
     print "Change bezel"
-    crop_img()
-    if os.path.isfile('./' + config['device'] + '.png') == True:
-        filesize = os.path.getsize('./' + config['device'] + '.png')
-        target = config['input'].get(str(filesize))
+    keyboard.press_and_release("f8")
+    #time.sleep(0.1)
+    #keyboard.release(key)
+    crop_img(player)
+    if os.path.isfile('./' + player + '.png') == True:
+        filesize = os.path.getsize('./' + player + '.png')
+        target = config[player]['input'].get(str(filesize))
         if target != None:
             print target
-            show_image(target)
+            show_image(target, player)
         else:
-            show_image("default")
+            show_image("default", player)
+    return true
 
 def open_devices():
     devs = [sys.argv[1]]
@@ -158,19 +168,22 @@ def process_event(event):
     if js_type & JS_EVENT_INIT:
         return False
 
-    if js_type == JS_EVENT_AXIS and js_number <= 7 and js_number % 2 == 1:
-        if js_value >= JS_MAX * JS_THRESH:
+    if js_type == JS_EVENT_AXIS and js_number <= 7 and js_number % 2 == 0:
+        if js_value <= JS_MIN * JS_THRESH:
             if HOTKEY_BTN_ON == True:
-                change_bezel()
+                change_bezel('1p')
+        elif js_value >= JS_MAX * JS_THRESH:
+            if HOTKEY_BTN_ON == True:
+                change_bezel('2p')
 
     if js_type == JS_EVENT_BUTTON:
         if js_value == 1:
             if js_number == btn_hotkey:
                 HOTKEY_BTN_ON = True
-            if js_number == btn_down and HOTKEY_BTN_ON == True :
-                change_bezel()
-            #else:
-            #    return False
+            elif js_number == btn_left and HOTKEY_BTN_ON == True :
+                change_bezel('1p')
+            elif js_number == btn_right and HOTKEY_BTN_ON == True :
+                change_bezel('2p')
         elif js_value == 0:
                 HOTKEY_BTN_ON = False
 
@@ -178,7 +191,7 @@ def process_event(event):
 
 def main():
     
-    global romname, btn_hotkey, btn_down, config
+    global romname, btn_hotkey, btn_left, btn_right, config
 
     # check if the controller is connected
     if os.path.isfile(sys.argv[1]) == False:
@@ -189,7 +202,8 @@ def main():
     print "Device: " + devname
     keymap = load_retroarch_cfg(devname)
     btn_hotkey = int(keymap.get('enable_hotkey'))
-    btn_down = int(keymap.get('down'))
+    btn_left = int(keymap.get('left'))
+    btn_right = int(keymap.get('right'))
     print "Hotkey: " + str(btn_hotkey)
     print "Down: " + str(btn_down)
     romname = get_romname()
@@ -198,24 +212,27 @@ def main():
     f = open(PATH_HOME+'bezel/'+romname+"/config.json", "r")
     json_data = json.load(f)
     f.close()
-    for j in json_data:
-        if j['device'] == sys.argv[1].replace('/dev/input/',''):
-            config = j
-            config['input'] = get_input(romname, j['device'])
+
+    if config.get['1p'] != None:
+        config['1p']['input'] = get_input(romname, '1p')
+        if config['1p']['screen'] == 'main': 
+            VIEWER_1P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.1p -f -a fill -l " + config['layer']
+        elif config['1p']['screen'] == 'second':
+            VIEWER_1P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.1p -f -a fill -l " + config['layer'] + ' -d 7'
+    if config.get['2p'] != None:    
+        config['2p']['input'] = get_input(romname, '2p')
+        if config['2p']['screen'] == 'main': 
+            VIEWER_2P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.2p -f -a fill -l " + config['layer']
+        elif config['2p']['screen'] == 'second':
+            VIEWER_2P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.2p -f -a fill -l " + config['layer'] + ' -d 7'     
     print config
-    os.system("pkill -ef /tmp/bezel." + config['device'])
-
-    if config['screen'] == 'main': 
-        VIEWER = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel." + config['device'] + " -f -a fill -l " + config['layer']
-    elif config['screen'] == 'second':
-        VIEWER = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel." + config['device'] + " -f -a fill -l " + config['layer'] + ' -d 7'
-    else:
-        print "Cannot find controller " + sys.argv[1]
-        sys.exit()
-
+    
+    # Initialize
+    os.system("pkill -ef /tmp/bezel.")
     os.system("rm -f "+PATH_SS+romname+"*")
     # Show default image
-    show_image('default')
+    show_image('default', '1p')
+    show_image('default', '2p')
 
     js_fds=[]
     rescan_time = time.time()
