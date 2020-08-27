@@ -196,7 +196,7 @@ def main():
     devname = get_devname(sys.argv[1])
     print "Device: " + devname
     keymap = load_retroarch_cfg(devname)
-    btn_hotkey = int(keymap.get('enable_hotkey'))
+    btn_hotkey = int(keymap.get('enable_hotkey_btn'))
     if keymap.get('left_btn') != None:
         btn_left = int(keymap.get('left_btn'))
     if keymap.get('right_btn') != None:
