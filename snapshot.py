@@ -32,7 +32,7 @@ def send_hotkey(key, repeat):
     time.sleep(0.1)
 
 def crop_img(filename):
-    os.system("rm "+SPATH+game+"*")
+    os.system("rm -f "+SPATH+game+"*")
     send_hotkey("f8", 1)
     time.sleep(1)
     flist = glob.glob(SPATH+game+"*")
