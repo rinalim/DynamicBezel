@@ -17,7 +17,7 @@ def send_hotkey(key, repeat):
     keyboard.press("2")
     time.sleep(0.1)
     keyboard.release("2")
-    time.sleep(0.1)
+    time.sleep(0.05)
 
     keyboard.press("2")
     time.sleep(0.1)
@@ -26,10 +26,10 @@ def send_hotkey(key, repeat):
         keyboard.press(key)
         time.sleep(0.1)
         keyboard.release(key)
-        time.sleep(0.1)
+        time.sleep(0.05)
     
     keyboard.release("2")
-    time.sleep(0.1)
+    #time.sleep(0.1)
 
 def crop_img(filename):
     os.system("rm -f "+SPATH+game+"*")
