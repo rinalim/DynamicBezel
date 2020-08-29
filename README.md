@@ -10,7 +10,7 @@ sudo sh ./install.sh
 ```
 
 ## Game setup
-copy game.zip.cfg to /home/pi/RetroPie/roms/[system]/[rom].zip.cfg
+Copy game.zip.cfg to /home/pi/RetroPie/roms/[system]/[rom].zip.cfg  
 For example,
 ```
 cd /home/pi/DynamicBezel
