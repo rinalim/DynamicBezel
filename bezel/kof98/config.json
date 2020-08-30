@@ -1,0 +1,14 @@
+{
+  "1p":
+  {
+    "position":"28x29+2+9",
+    "display":"main",
+    "layer":"30001"
+  },
+  "2p":
+  {
+    "position":"28x29+274+9",
+    "display":"main",
+    "layer":"30002"
+  }
+}
