@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os, sys, time, keyboard, datetime
-import json, glob, struct, array, errno
+import json, glob, struct, array, errno, filecmp
 from bitstring import Bits
 from fcntl import ioctl
 from subprocess import *
@@ -101,6 +101,14 @@ def crop_img(player):
     else:
         return False
 
+def compare_img(file1, file2):
+    os.system("compare -metric PSNR " + file1 + " " + file2 + " ./diff.png > ./compare.txt 2>&1")
+    result = run_cmd("cat ./compare.txt")
+    if result == 'inf':
+        return True
+    else:
+        return False
+
 def get_romname():
     while True:
         ps_grep = run_cmd("ps -aux | grep emulators | grep -v 'grep'")
@@ -114,6 +122,7 @@ def get_romname():
             return romname
 
 def get_input(romname, player):
+    dup_size = []
     input_data = {}
     if(os.path.isdir(PATH_HOME+'bezel/'+romname+'/'+player)):
         file_list = os.listdir(PATH_HOME+'bezel/'+romname+'/'+player+'/input')
@@ -121,8 +130,22 @@ def get_input(romname, player):
             if f.endswith('png'):
                 size = os.path.getsize(PATH_HOME+'bezel/'+romname+'/'+player+'/input/'+f)
                 filename = f.replace('.png','')
-                input_data[str(size)] = filename.split('_')[0]
-    return input_data   
+                if input_data.get(str(size)) != None:
+                    if input_data[str(size)] != filename.split('_')[0]:
+                        dup_size.append(str(size))
+                else:
+                    input_data[str(size)] = filename.split('_')[0]
+        for d in dup_size:
+            filelist = []
+            for f in file_list:
+                if f.endswith('png'):
+                    size = os.path.getsize(PATH_HOME+'bezel/'+romname+'/'+player+'/input/'+f)
+                    if d == str(size):
+                        filelist.append(f)
+            input_data[d] = filelist
+
+    return input_data
+
 
 def show_image(img_name, player):
     png_path = PATH_HOME + "bezel/" + romname + '/' + player + "/output/" + img_name + ".png"
@@ -147,8 +170,13 @@ def change_bezel(player):
         filesize = os.path.getsize('./' + player + '.png')
         target = config[player]['input'].get(str(filesize))
         if target != None:
-            print target
-            show_image(target, player)
+            if str(type(target)) == "<type 'str'>":
+                show_image(target, player)
+            elif str(type(target)) == "<type 'list'>":
+                for t in target:
+                    t_path = PATH_HOME+'bezel/'+romname+'/'+player+'/input/'+t
+                    if compare_img('./' + player + '.png', t_path) == True:
+                        show_image(t.split('_')[0], player)
         else:
             show_image("default", player)
     return True
