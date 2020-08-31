@@ -279,6 +279,7 @@ def main():
     # Initialize
     os.system("pkill -ef /tmp/bezel.")
     os.system("rm -f "+PATH_SS+romname+"*")
+    os.system("rm -f ./*png")
     # Show default image
     show_image('default', '1p')
     show_image('default', '2p')
