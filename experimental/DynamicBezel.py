@@ -254,7 +254,7 @@ def main():
 
     if is_running("PauseMenu.py /dev/input") == True:
         mode = "auto"
-    else
+    else:
         mode = "manual"
 
     if mode == "manual":
