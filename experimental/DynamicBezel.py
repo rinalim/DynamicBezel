@@ -243,7 +243,10 @@ def main():
     
     global romname, btn_hotkey, btn_left, btn_right, config, VIEWER_1P, VIEWER_2P
 
-    mode = "auto"
+    if is_running("PauseMenu.py /dev/input") == True:
+        mode = "auto"
+    else
+        mode = "manual"
 
     if mode == "manual":
         devname = get_devname(sys.argv[1])
@@ -328,7 +331,7 @@ def main():
                 time.sleep(0.01)
 
     elif mode == "auto":
-        print "Auto mode":
+        print "Auto mode"
         while True:
             change_bezel('1p')
             change_bezel('2p')
