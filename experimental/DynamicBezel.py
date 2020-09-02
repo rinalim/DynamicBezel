@@ -254,8 +254,10 @@ def main():
 
     if is_running("/PauseMenu.py /dev/input") == True:
         mode = "auto"
+        print "Auto mode"
     else:
         mode = "manual"
+        print "Manual mode"
 
     if mode == "manual":
         devname = get_devname(sys.argv[1])
@@ -340,7 +342,6 @@ def main():
                 time.sleep(0.01)
 
     elif mode == "auto":
-        print "Auto mode"
         while True:
             change_bezel('all')
             time.sleep(3)
