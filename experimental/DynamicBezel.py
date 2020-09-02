@@ -172,13 +172,13 @@ def change_bezel(player):
     for p in players:
         if config.get(p) == None:
            print "No config found for " + p
-            return False
+           return False
 
     send_hotkey("f8", 1)
     if crop_img(player) == False:
         print "No image to crop"
         return False
-        
+
     for p in players:
         if os.path.isfile('./' + p + '.png') == True:
             filesize = os.path.getsize('./' + p + '.png')
