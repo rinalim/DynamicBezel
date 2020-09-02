@@ -174,7 +174,7 @@ def change_bezel(player):
         players = ['1p', '2p']
     else:
         players = [player]
-    for p in players
+    for p in players:
         if os.path.isfile('./' + p + '.png') == True:
             filesize = os.path.getsize('./' + p + '.png')
             target = config[p]['input'].get(str(filesize))
