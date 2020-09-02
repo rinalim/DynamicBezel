@@ -95,7 +95,11 @@ def crop_img(player):
     time.sleep(0.5)
     flist = glob.glob(PATH_SS+romname+"*")
     if len(flist) > 0:
-        os.system("convert " + flist[-1] + " -crop " + config[player]['position'] + " ./" + player + ".png")
+        if player == "all":
+            os.system("convert " + flist[-1] + " -crop " + config['1p']['position'] + " ./" + '1p' + ".png")
+            os.system("convert " + flist[-1] + " -crop " + config['2p']['position'] + " ./" + '2p' + ".png")
+        else:
+            os.system("convert " + flist[-1] + " -crop " + config[player]['position'] + " ./" + player + ".png")
         os.system("rm -f "+PATH_SS+romname+"*")
         return True
     else:
@@ -166,19 +170,24 @@ def change_bezel(player):
     if crop_img(player) == False:
         print "No image to crop"
         return False
-    if os.path.isfile('./' + player + '.png') == True:
-        filesize = os.path.getsize('./' + player + '.png')
-        target = config[player]['input'].get(str(filesize))
-        if target != None:
-            if str(type(target)) == "<type 'str'>":
-                show_image(target, player)
-            elif str(type(target)) == "<type 'list'>":
-                for t in target:
-                    t_path = PATH_HOME+'bezel/'+romname+'/'+player+'/input/'+t
-                    if compare_img('./' + player + '.png', t_path) == True:
-                        show_image(t.split('_')[0], player)
-        else:
-            show_image("default", player)
+    if player == 'all':
+        players = ['1p', '2p']
+    else:
+        players = [player]
+    for p in players
+        if os.path.isfile('./' + p + '.png') == True:
+            filesize = os.path.getsize('./' + p + '.png')
+            target = config[p]['input'].get(str(filesize))
+            if target != None:
+                if str(type(target)) == "<type 'str'>":
+                    show_image(target, p)
+                elif str(type(target)) == "<type 'list'>":
+                    for t in target:
+                        t_path = PATH_HOME+'bezel/'+romname+'/'+p+'/input/'+t
+                        if compare_img('./' + p + '.png', t_path) == True:
+                            show_image(t.split('_')[0], p)
+            else:
+                show_image("default", p)
     return True
 
 def open_devices():
@@ -333,8 +342,7 @@ def main():
     elif mode == "auto":
         print "Auto mode"
         while True:
-            change_bezel('1p')
-            change_bezel('2p')
+            change_bezel('all')
             time.sleep(3)
 
 
