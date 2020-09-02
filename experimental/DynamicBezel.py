@@ -43,7 +43,7 @@ def run_cmd(cmd):
     return output
         
 def is_running(pname):
-    ps_grep = run_cmd("ps -ef | grep " + pname + " | grep -v grep")
+    ps_grep = run_cmd("ps -ef | grep '" + pname + "' | grep -v grep")
     if len(ps_grep) > 1 and "bash" not in ps_grep:
         return True
     else:
