@@ -252,7 +252,7 @@ def main():
     
     global romname, btn_hotkey, btn_left, btn_right, config, VIEWER_1P, VIEWER_2P
 
-    if is_running("PauseMenu.py /dev/input") == True:
+    if is_running("/PauseMenu.py /dev/input") == True:
         mode = "auto"
     else:
         mode = "manual"
