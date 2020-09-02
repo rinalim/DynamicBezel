@@ -162,18 +162,23 @@ def show_image(img_name, player):
                 os.system(VIEWER_2P + " &")
 
 def change_bezel(player):
-    if config.get(player) == None:
-        print "No config found for " + player
-        return False
     print "Change bezel"
-    send_hotkey("f8", 1)
-    if crop_img(player) == False:
-        print "No image to crop"
-        return False
+    
     if player == 'all':
         players = ['1p', '2p']
     else:
         players = [player]
+    
+    for p in players:
+        if config.get(p) == None:
+           print "No config found for " + p
+            return False
+
+    send_hotkey("f8", 1)
+    if crop_img(player) == False:
+        print "No image to crop"
+        return False
+        
     for p in players:
         if os.path.isfile('./' + p + '.png') == True:
             filesize = os.path.getsize('./' + p + '.png')
