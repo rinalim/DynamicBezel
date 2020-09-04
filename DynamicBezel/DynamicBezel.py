@@ -29,6 +29,9 @@ JS_EVENT_INIT = 0x80
 event_format = 'IhBB'
 event_size = struct.calcsize(event_format)
 
+now_1p = ""
+now_2p = ""
+refresh_interval = 1
 btn_hotkey = -1
 btn_left = -1
 btn_right= -1
@@ -43,7 +46,7 @@ def run_cmd(cmd):
     return output
         
 def is_running(pname):
-    ps_grep = run_cmd("ps -ef | grep " + pname + " | grep -v grep")
+    ps_grep = run_cmd("ps -ef | grep '" + pname + "' | grep -v grep")
     if len(ps_grep) > 1 and "bash" not in ps_grep:
         return True
     else:
@@ -95,7 +98,11 @@ def crop_img(player):
     time.sleep(0.5)
     flist = glob.glob(PATH_SS+romname+"*")
     if len(flist) > 0:
-        os.system("convert " + flist[-1] + " -crop " + config[player]['position'] + " ./" + player + ".png")
+        if player == "all":
+            os.system("convert " + flist[-1] + " -crop " + config['1p']['position'] + " ./" + '1p' + ".png")
+            os.system("convert " + flist[-1] + " -crop " + config['2p']['position'] + " ./" + '2p' + ".png")
+        else:
+            os.system("convert " + flist[-1] + " -crop " + config[player]['position'] + " ./" + player + ".png")
         os.system("rm -f "+PATH_SS+romname+"*")
         return True
     else:
@@ -148,37 +155,60 @@ def get_input(romname, player):
 
 
 def show_image(img_name, player):
+    global now_1p, now_2p, refresh_interval
     png_path = PATH_HOME + "bezel/" + romname + '/' + player + "/output/" + img_name + ".png"
     if os.path.isfile(png_path) == True:
-        os.system("echo " + png_path + " > /tmp/bezel." + player)
+        if player == '1p':
+            if img_name != now_1p:
+                os.system("echo " + png_path + " > /tmp/bezel." + player)
+                now_1p = img_name
+        elif player == '2p':
+            if img_name != now_2p:
+                os.system("echo " + png_path + " > /tmp/bezel." + player)
+                now_2p = img_name
+        if now_1p != 'default' and now_2p != 'default':
+            refresh_interval = 3
+        else:
+            refresh_interval = 1
         if is_running("/tmp/bezel." + player) == False:
             if player == '1p':
                 os.system(VIEWER_1P + " &")
             elif player == '2p':
                 os.system(VIEWER_2P + " &")
 
+
 def change_bezel(player):
-    if config.get(player) == None:
-        print "No config found for " + player
-        return False
     print "Change bezel"
+    
+    if player == 'all':
+        players = ['1p', '2p']
+    else:
+        players = [player]
+    
+    for p in players:
+        if config.get(p) == None:
+           print "No config found for " + p
+           return False
+
     send_hotkey("f8", 1)
     if crop_img(player) == False:
         print "No image to crop"
         return False
-    if os.path.isfile('./' + player + '.png') == True:
-        filesize = os.path.getsize('./' + player + '.png')
-        target = config[player]['input'].get(str(filesize))
-        if target != None:
-            if str(type(target)) == "<type 'str'>":
-                show_image(target, player)
-            elif str(type(target)) == "<type 'list'>":
-                for t in target:
-                    t_path = PATH_HOME+'bezel/'+romname+'/'+player+'/input/'+t
-                    if compare_img('./' + player + '.png', t_path) == True:
-                        show_image(t.split('_')[0], player)
-        else:
-            show_image("default", player)
+
+    for p in players:
+        if os.path.isfile('./' + p + '.png') == True:
+            filesize = os.path.getsize('./' + p + '.png')
+            target = config[p]['input'].get(str(filesize))
+            if target != None:
+                if str(type(target)) == "<type 'str'>":
+                    show_image(target, p)
+                elif str(type(target)) == "<type 'list'>":
+                    for t in target:
+                        t_path = PATH_HOME+'bezel/'+romname+'/'+p+'/input/'+t
+                        if compare_img('./' + p + '.png', t_path) == True:
+                            show_image(t.split('_')[0], p)
+            else:
+                show_image("default", p)
     return True
 
 def open_devices():
@@ -243,20 +273,29 @@ def main():
     
     global romname, btn_hotkey, btn_left, btn_right, config, VIEWER_1P, VIEWER_2P
 
-    devname = get_devname(sys.argv[1])
-    print "Device: " + devname
-    keymap = load_retroarch_cfg(devname)
-    btn_hotkey = int(keymap.get('enable_hotkey_btn'))
-    if keymap.get('left_btn') != None:
-        btn_left = int(keymap.get('left_btn'))
-    if keymap.get('right_btn') != None:
-        btn_right = int(keymap.get('right_btn'))
-    print "Hotkey: " + str(btn_hotkey)
-    print "Left: " + str(btn_left)
-    print "Right: " + str(btn_right)
+    time.sleep(3)
+    if is_running("/PauseMenu.py /dev/input") == True:
+        mode = "auto"
+        print "Auto mode"
+    else:
+        mode = "manual"
+        print "Manual mode"
+
+    if mode == "manual":
+        devname = get_devname(sys.argv[1])
+        print "Device: " + devname
+        keymap = load_retroarch_cfg(devname)
+        btn_hotkey = int(keymap.get('enable_hotkey_btn'))
+        if keymap.get('left_btn') != None:
+            btn_left = int(keymap.get('left_btn'))
+        if keymap.get('right_btn') != None:
+            btn_right = int(keymap.get('right_btn'))
+        print "Hotkey: " + str(btn_hotkey)
+        print "Left: " + str(btn_left)
+        print "Right: " + str(btn_right)
+
     romname = get_romname()
     print "Rom: " + romname
-    
     f = open(PATH_HOME+'bezel/'+romname+"/config.json", "r")
     config = json.load(f)
     f.close()
@@ -284,44 +323,54 @@ def main():
     show_image('default', '1p')
     show_image('default', '2p')
 
-    js_fds=[]
-    rescan_time = time.time()
-    while True:
-        do_sleep = True
-        if not js_fds:
-            js_devs, js_fds = open_devices()
-            if js_fds:
-                i = 0
-                current = time.time()
-                js_last = [None] * len(js_fds)
-                for js in js_fds:
-                    js_last[i] = current
-                    i += 1
+    if mode == "manual":
+        js_fds=[]
+        rescan_time = time.time()
+        while True:
+            do_sleep = True
+            if not js_fds:
+                js_devs, js_fds = open_devices()
+                if js_fds:
+                    i = 0
+                    current = time.time()
+                    js_last = [None] * len(js_fds)
+                    for js in js_fds:
+                        js_last[i] = current
+                        i += 1
+                else:
+                    time.sleep(1)
             else:
-                time.sleep(1)
-        else:
-            i = 0
-            for fd in js_fds:
-                event = read_event(fd)
-                if event:
-                    do_sleep = False
-                    if time.time() - js_last[i] > JS_REP:
-                        if process_event(event):
-                            js_last[i] = time.time()
-                elif event == False:
+                i = 0
+                for fd in js_fds:
+                    event = read_event(fd)
+                    if event:
+                        do_sleep = False
+                        if time.time() - js_last[i] > JS_REP:
+                            if process_event(event):
+                                js_last[i] = time.time()
+                    elif event == False:
+                        close_fds(js_fds)
+                        js_fds = []
+                        break
+                    i += 1
+
+            if time.time() - rescan_time > 2:
+                rescan_time = time.time()
+                if cmp(js_devs, [sys.argv[1]]):
                     close_fds(js_fds)
                     js_fds = []
-                    break
-                i += 1
 
-        if time.time() - rescan_time > 2:
-            rescan_time = time.time()
-            if cmp(js_devs, [sys.argv[1]]):
-                close_fds(js_fds)
-                js_fds = []
+            if do_sleep:
+                time.sleep(0.01)
 
-        if do_sleep:
-            time.sleep(0.01)
+    elif mode == "auto":
+        while True:
+            if config.get('2p') != None:
+                change_bezel('all')
+            else:
+                change_bezel('1p')
+            time.sleep(refresh_interval)
+
 
 if __name__ == "__main__":
     import sys
