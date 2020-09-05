@@ -296,6 +296,8 @@ def main():
 
     romname = get_romname()
     print "Rom: " + romname
+    if os.path.isfile(PATH_HOME+'bezel/'+romname+"/config.json") == False:
+        sys.exit(0)
     f = open(PATH_HOME+'bezel/'+romname+"/config.json", "r")
     config = json.load(f)
     f.close()
