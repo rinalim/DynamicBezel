@@ -1,4 +1,4 @@
-sudo apt install python-pyudev -y
+sudo apt install python-pyudev python-bitstring -y
 sudo pip install keyboard
 
 rm -rf /opt/retropie/configs/all/DynamicBezel/
