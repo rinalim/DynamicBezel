@@ -372,7 +372,7 @@ def main():
                 time.sleep(0.01)
 
     elif mode == "auto":
-        time.sleep(3)
+        time.sleep(7)
         while True:
             if config.get('2p') != None:
                 change_bezel('all')
