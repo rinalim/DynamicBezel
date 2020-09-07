@@ -29,10 +29,10 @@ JS_EVENT_INIT = 0x80
 event_format = 'IhBB'
 event_size = struct.calcsize(event_format)
 
-now_1p = "default"
-now_2p = "default"
-prev_1p = ""
-prev_2p = ""
+now_1p = ""
+now_2p = ""
+prev_1p = "default"
+prev_2p = "default"
 refresh_interval = 1
 btn_hotkey = -1
 btn_left = -1
