@@ -31,6 +31,8 @@ event_size = struct.calcsize(event_format)
 
 now_1p = ""
 now_2p = ""
+prev_1p = ""
+prev_2p = ""
 refresh_interval = 1
 btn_hotkey = -1
 btn_left = -1
@@ -155,21 +157,25 @@ def get_input(romname, player):
 
 
 def show_image(img_name, player):
-    global now_1p, now_2p, refresh_interval
+    global now_1p, now_2p, prev_1p, prev_2p, refresh_interval
     png_path = PATH_HOME + "bezel/" + romname + '/' + player + "/output/" + img_name + ".png"
     if os.path.isfile(png_path) == True:
         if player == '1p':
             if img_name != now_1p:
-                os.system("echo " + png_path + " > /tmp/bezel." + player)
-                now_1p = img_name
+                if img_name != 'default' or prev_1p == 'default':
+                    os.system("echo " + png_path + " > /tmp/bezel." + player)
+                    now_1p = img_name
+                prev_1p = img_name
         elif player == '2p':
             if img_name != now_2p:
-                os.system("echo " + png_path + " > /tmp/bezel." + player)
-                now_2p = img_name
-        if now_1p != 'default' and now_2p != 'default':
-            refresh_interval = 3
-        else:
+                if img_name != 'default' or prev_2p == 'default':
+                    os.system("echo " + png_path + " > /tmp/bezel." + player)
+                    now_2p = img_name
+                prev_2p = img_name
+        if now_1p == 'default':
             refresh_interval = 1
+        else:
+            refresh_interval = 3
         if is_running("/tmp/bezel." + player) == False:
             if player == '1p':
                 os.system(VIEWER_1P + " &")
@@ -318,7 +324,7 @@ def main():
     print config
     
     # Initialize
-    os.system("pkill -ef /tmp/bezel.")
+    os.system("pkill -ef omxiv-bezel")
     os.system("rm -f "+PATH_SS+romname+"*")
     os.system("rm -f ./*png")
     # Show default image
@@ -366,13 +372,21 @@ def main():
                 time.sleep(0.01)
 
     elif mode == "auto":
+        time.sleep(7)
         while True:
-            if config.get('2p') != None:
-                change_bezel('all')
+            if is_running('omxiv-pause') == True:
+                if is_running('omxiv-bezel') == True:
+                    os.system("pkill -ef omxiv-bezel")
             else:
-                change_bezel('1p')
+                if is_running('omxiv-bezel') == False:
+                    show_image(now_1p, '1p')
+                    show_image(now_2p, '2p')
+                else:
+                    if config.get('2p') != None:
+                        change_bezel('all')
+                    else:
+                        change_bezel('1p')
             time.sleep(refresh_interval)
-
 
 if __name__ == "__main__":
     import sys
