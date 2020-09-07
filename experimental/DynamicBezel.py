@@ -29,8 +29,8 @@ JS_EVENT_INIT = 0x80
 event_format = 'IhBB'
 event_size = struct.calcsize(event_format)
 
-now_1p = ""
-now_2p = ""
+now_1p = "default"
+now_2p = "default"
 prev_1p = ""
 prev_2p = ""
 refresh_interval = 1
