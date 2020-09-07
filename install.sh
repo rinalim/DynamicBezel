@@ -1,5 +1,5 @@
 sudo apt install python-pyudev python-bitstring -y
-sudo pip install keyboard
+sudo pip install keyboard==0.13.4
 
 rm -rf /opt/retropie/configs/all/DynamicBezel/
 mkdir /opt/retropie/configs/all/DynamicBezel/
