@@ -31,8 +31,8 @@ event_size = struct.calcsize(event_format)
 
 now_1p = ""
 now_2p = ""
-prev_1p = "default"
-prev_2p = "default"
+prev_1p = ""
+prev_2p = ""
 refresh_interval = 1
 btn_hotkey = -1
 btn_left = -1
@@ -140,10 +140,10 @@ def get_input(romname, player):
                 size = os.path.getsize(PATH_HOME+'bezel/'+romname+'/'+player+'/input/'+f)
                 filename = f.replace('.png','')
                 if input_data.get(str(size)) != None:
-                    if input_data[str(size)] != filename.split('_')[0]:
-                        dup_size.append(str(size))
+                    input_data[str(size)].append(f)
                 else:
-                    input_data[str(size)] = filename.split('_')[0]
+                    input_data[str(size)] = [f]
+        '''
         for d in dup_size:
             filelist = []
             for f in file_list:
@@ -152,6 +152,7 @@ def get_input(romname, player):
                     if d == str(size):
                         filelist.append(f)
             input_data[d] = filelist
+        '''
 
     return input_data
 
@@ -324,7 +325,7 @@ def main():
     print config
     
     # Initialize
-    os.system("pkill -ef omxiv-bezel")
+    os.system("pkill -ef /tmp/bezel.")
     os.system("rm -f "+PATH_SS+romname+"*")
     os.system("rm -f ./*png")
     # Show default image
@@ -374,19 +375,12 @@ def main():
     elif mode == "auto":
         time.sleep(7)
         while True:
-            if is_running('omxiv-pause') == True:
-                if is_running('omxiv-bezel') == True:
-                    os.system("pkill -ef omxiv-bezel")
+            if config.get('2p') != None:
+                change_bezel('all')
             else:
-                if is_running('omxiv-bezel') == False:
-                    show_image(now_1p, '1p')
-                    show_image(now_2p, '2p')
-                else:
-                    if config.get('2p') != None:
-                        change_bezel('all')
-                    else:
-                        change_bezel('1p')
+                change_bezel('1p')
             time.sleep(refresh_interval)
+
 
 if __name__ == "__main__":
     import sys
