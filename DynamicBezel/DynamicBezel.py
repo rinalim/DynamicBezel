@@ -31,8 +31,8 @@ event_size = struct.calcsize(event_format)
 
 now_1p = ""
 now_2p = ""
-prev_1p = ""
-prev_2p = ""
+prev_1p = "default"
+prev_2p = "default"
 refresh_interval = 1
 btn_hotkey = -1
 btn_left = -1
@@ -113,7 +113,7 @@ def crop_img(player):
 def compare_img(file1, file2):
     os.system("compare -metric PSNR " + file1 + " " + file2 + " ./diff.png > ./compare.txt 2>&1")
     result = run_cmd("cat ./compare.txt")
-    if result == 'inf':
+    if result == 'inf' or float(result) > 40:
         return True
     else:
         return False
@@ -140,10 +140,10 @@ def get_input(romname, player):
                 size = os.path.getsize(PATH_HOME+'bezel/'+romname+'/'+player+'/input/'+f)
                 filename = f.replace('.png','')
                 if input_data.get(str(size)) != None:
-                    if input_data[str(size)] != filename.split('_')[0]:
-                        dup_size.append(str(size))
+                    input_data[str(size)].append(f)
                 else:
-                    input_data[str(size)] = filename.split('_')[0]
+                    input_data[str(size)] = [f]
+        '''
         for d in dup_size:
             filelist = []
             for f in file_list:
@@ -152,6 +152,7 @@ def get_input(romname, player):
                     if d == str(size):
                         filelist.append(f)
             input_data[d] = filelist
+        '''
 
     return input_data
 

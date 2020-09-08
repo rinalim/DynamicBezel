@@ -140,10 +140,10 @@ def get_input(romname, player):
                 size = os.path.getsize(PATH_HOME+'bezel/'+romname+'/'+player+'/input/'+f)
                 filename = f.replace('.png','')
                 if input_data.get(str(size)) != None:
-                    input_data[str(size)].append(f)
+                    if input_data[str(size)] != filename.split('_')[0]:
+                        dup_size.append(str(size))
                 else:
-                    input_data[str(size)] = [f]
-        '''
+                    input_data[str(size)] = filename.split('_')[0]
         for d in dup_size:
             filelist = []
             for f in file_list:
@@ -152,7 +152,6 @@ def get_input(romname, player):
                     if d == str(size):
                         filelist.append(f)
             input_data[d] = filelist
-        '''
 
     return input_data
 
