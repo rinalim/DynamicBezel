@@ -45,7 +45,7 @@ def run_cmd(cmd):
 # runs whatever in the cmd variable
     p = Popen(cmd, shell=True, stdout=PIPE)
     output = p.communicate()[0]
-    return output
+    return output.decode()
         
 def is_running(pname):
     ps_grep = run_cmd("ps -ef | grep '" + pname + "' | grep -v grep")
@@ -101,18 +101,18 @@ def crop_img(player):
     flist = glob.glob(PATH_SS+romname+"*")
     if len(flist) > 0:
         if player == "all":
-            os.system("convert " + flist[-1] + " -crop " + config['1p']['position'] + " ./" + '1p' + ".png")
-            os.system("convert " + flist[-1] + " -crop " + config['2p']['position'] + " ./" + '2p' + ".png")
+            os.system("convert " + flist[-1] + " -crop " + config['1p']['position'] + " /tmp/" + '1p' + ".png")
+            os.system("convert " + flist[-1] + " -crop " + config['2p']['position'] + " /tmp/" + '2p' + ".png")
         else:
-            os.system("convert " + flist[-1] + " -crop " + config[player]['position'] + " ./" + player + ".png")
+            os.system("convert " + flist[-1] + " -crop " + config[player]['position'] + " /tmp/" + player + ".png")
         os.system("rm -f "+PATH_SS+romname+"*")
         return True
     else:
         return False
 
 def compare_img(file1, file2):
-    os.system("compare -metric PSNR " + file1 + " " + file2 + " ./diff.png > ./compare.txt 2>&1")
-    result = run_cmd("cat ./compare.txt")
+    os.system("compare -metric PSNR " + file1 + " " + file2 + " /tmp/diff.png > /tmp/compare.txt 2>&1")
+    result = run_cmd("cat /tmp/compare.txt")
     if result == 'inf' or float(result) > 40:
         return True
     else:
@@ -185,7 +185,7 @@ def show_image(img_name, player):
 
 
 def change_bezel(player):
-    print "Change bezel"
+    #print "Change bezel"
     
     if player == 'all':
         players = ['1p', '2p']
@@ -194,30 +194,30 @@ def change_bezel(player):
     
     for p in players:
         if config.get(p) == None:
-           print "No config found for " + p
+           print("No config found for " + p)
            return False
 
     send_hotkey("f8", 1)
     if crop_img(player) == False:
-        print "No image to crop"
+        print("No image to crop")
         return False
 
     for p in players:
-        if os.path.isfile('./' + p + '.png') == True:
-            filesize = os.path.getsize('./' + p + '.png')
+        if os.path.isfile('/tmp/' + p + '.png') == True:
+            filesize = os.path.getsize('/tmp/' + p + '.png')
             target = config[p]['input'].get(str(filesize))
             if target != None:
-                if str(type(target)) == "<type 'str'>":
-                    show_image(target, p)
-                elif str(type(target)) == "<type 'list'>":
+                if len(target) == 1:
+                    show_image(target[0].split('_')[0], p)
+                elif len(target) > 1:
                     for t in target:
                         t_path = PATH_HOME+'bezel/'+romname+'/'+p+'/input/'+t
-                        if compare_img('./' + p + '.png', t_path) == True:
+                        if compare_img('/tmp/' + p + '.png', t_path) == True:
                             show_image(t.split('_')[0], p)
             else:
                 show_image("default", p)
     return True
-
+ff
 def open_devices():
     devs = [sys.argv[1]]
 
@@ -238,7 +238,7 @@ def read_event(fd):
     while True:
         try:
             event = os.read(fd, event_size)
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.EWOULDBLOCK:
                 return None
             return False
@@ -283,32 +283,32 @@ def main():
     time.sleep(3)
     if is_running("/PauseMenu.py /dev/input") == True:
         mode = "auto"
-        print "Auto mode"
+        #print "Auto mode"
     else:
         mode = "manual"
-        print "Manual mode"
+        #print "Manual mode"
 
     if mode == "manual":
         devname = get_devname(sys.argv[1])
-        print "Device: " + devname
+        #print "Device: " + devname
         keymap = load_retroarch_cfg(devname)
         btn_hotkey = int(keymap.get('enable_hotkey_btn'))
         if keymap.get('left_btn') != None:
             btn_left = int(keymap.get('left_btn'))
         if keymap.get('right_btn') != None:
             btn_right = int(keymap.get('right_btn'))
-        print "Hotkey: " + str(btn_hotkey)
-        print "Left: " + str(btn_left)
-        print "Right: " + str(btn_right)
+        #print "Hotkey: " + str(btn_hotkey)
+        #print "Left: " + str(btn_left)
+        #print "Right: " + str(btn_right)
 
     romname = get_romname()
-    print "Rom: " + romname
+    #print "Rom: " + romname
     if os.path.isfile(PATH_HOME+'bezel/'+romname+"/config.json") == False:
         sys.exit(0)
     f = open(PATH_HOME+'bezel/'+romname+"/config.json", "r")
     config = json.load(f)
     f.close()
-    print config
+    #print config
 
     if config.get('1p') != None:
         config['1p']['input'] = get_input(romname, '1p')
@@ -322,12 +322,12 @@ def main():
             VIEWER_2P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.2p -f -a fill -T blend --duration 100 -l " + config['2p']['layer']
         elif config['2p']['display'] == 'second':
             VIEWER_2P = PATH_DYNAMICBEZEL + "omxiv-bezel /tmp/bezel.2p -f -T blend --duration 100 -l " + config['2p']['layer'] + " -d 7"     
-    print config
+    #print config
     
     # Initialize
     os.system("pkill -ef /tmp/bezel.")
     os.system("rm -f "+PATH_SS+romname+"*")
-    os.system("rm -f ./*png")
+    os.system("rm -f /tmp/*p.png")
     # Show default image
     show_image('default', '1p')
     show_image('default', '2p')
