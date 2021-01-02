@@ -217,7 +217,7 @@ def change_bezel(player):
             else:
                 show_image("default", p)
     return True
-ff
+
 def open_devices():
     devs = [sys.argv[1]]
 
